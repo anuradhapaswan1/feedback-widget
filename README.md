@@ -13,10 +13,11 @@ A responsive feedback widget built using **HTML, CSS, and Vanilla JavaScript**, 
 
 ## 📸 Preview
 
-![screenshot](screenshot.png) <!-- Upload your screenshot here -->
+![screenshot](<img width="1888" height="895" alt="feedback widget" src="https://github.com/user-attachments/assets/e082bf5f-2649-4d75-9e2e-a6df04b5b4c8" />
+) <!-- Upload your screenshot here -->
 
 ## 🚀 How to Run Locally
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/your-username/feedback-widget.git
+   git clone https://github.com/anuradhapaswan1/feedback-widget.git
