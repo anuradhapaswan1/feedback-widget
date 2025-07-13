@@ -13,8 +13,7 @@ A responsive feedback widget built using **HTML, CSS, and Vanilla JavaScript**, 
 
 ## 📸 Preview
 
-![screenshot](feedback widget.png) <!-- Upload your screenshot here -->
-
+![screenshot](https://github.com/anuradhapaswan1/feedback-widget/blob/main/feedback%20widget.png) 
 ## 🚀 How to Run Locally
 
 1. Clone this repository:
