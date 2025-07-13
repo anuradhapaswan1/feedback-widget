@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feedback Widget</title>
+  <style>
+    :root {
+      --primary-color: #007bff;
+    }
+    body {
+    
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .dark-mode {
+      background-color: #121212;
+      color: #ffffff;
+    }
+
+    #widget-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 1001;
+    }
+    #toggle-dark, #export-btn {
+      position: fixed;
+      top: 20px;
+      padding: 8px 14px;
+      background: #444;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 1001;
+    }
+    #toggle-dark { right: 20px; }
+    #export-btn { right: 120px; }
+    .theme-options {
+      position: fixed;
+      top: 20px;
+      right: 220px;
+      display: flex;
+      gap: 8px;
+      z-index: 1001;
+    }
+    .theme-button {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid white;
+      cursor: pointer;
+    }
+    .theme-blue { background: #007bff; }
+    .theme-purple { background: #6f42c1; }
+    .theme-teal { background: #20c997; }
+    #feedback-form {
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.4s ease;
+      transform: translateY(20px);
+      position: fixed;
+      bottom: 70px;
+      right: 20px;
+      background-color: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      width: 250px;
+      z-index: 999;
+    }
+    .dark-mode #feedback-form {
+      background-color: #1e1e1e;
+      color: white;
+      border-color: #444;
+    }
+    #feedback-form.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    <!-- Feedback Display Container -->
+<div id="feedback-list">
+  <h2>Feedback Received:</h2>
+  <div id="feedback-container"></div>
+</div>
+
+    textarea {
+      width: 100%;
+      height: 80px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      padding: 5px;
+      border: 1px solid #ccc;
+    }
+    .dark-mode textarea {
+      background: #333;
+      color: white;
+      border-color: #555;
+    }
+    #submit-btn {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+      transition: background-color 0.3s;
+    }
+    #submit-btn:hover {
+      background-color: #218838;
+    }
+    #feedback-list {
+      margin: 20px;
+    }
+    .feedback-item {
+      background-color: #f1f1f1;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      white-space: pre-line;
+    }
+    .dark-mode .feedback-item {
+      background-color: #2e2e2e;
+      color: white;
+    }
+    .timestamp {
+      font-size: 0.8em;
+      color: #777;
+      margin-bottom: 5px;
+      display: block;
+    }
+    .char-count {
+      font-size: 0.85em;
+      color: #555;
+      margin-bottom: 5px;
+    }
+    #toast {
+      visibility: hidden;
+      min-width: 200px;
+      margin-left: -100px;
+      background-color: #28a745;
+      color: white;
+      text-align: center;
+      border-radius: 4px;
+      padding: 10px;
+      position: fixed;
+      z-index: 1000;
+      left: 50%;
+      bottom: 40px;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.5s, bottom 0.5s;
+    }
+    #toast.show {
+      visibility: visible;
+      opacity: 1;
+      bottom: 60px;
+    }
+  </style>
+</head>
+
+
+<button id="stats-btn" style="position: fixed; top: 20px; right: 340px; background: #888; color: white; padding: 8px 14px; border: none; border-radius: 5px; cursor: pointer; z-index: 1001;">📊 Stats</button>
+<div id="feedback-stats" style="display:none; position: fixed; top: 60px; right: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1001; max-width: 250px; font-size: 14px;">
+  <h4>📈 Feedback Stats</h4>
+  <p><strong>Total Entries:</strong> <span id="total-feedback">0</span></p>
+  <p><strong>Total Characters:</strong> <span id="total-chars">0</span></p>
+  <p><strong>Last Submitted:</strong> <span id="last-entry">N/A</span></p>
+</div>
+
+<!-- Feedback Filter UI -->
+<div style="margin: 20px 20px 0;">
+  <input type="text" id="filter-input" placeholder="🔍 Filter feedback..." style="padding: 8px; width: 250px; border-radius: 5px; border: 1px solid #ccc;" />
+</div>
+
+<script>
+  const statsBtn = document.getElementById('stats-btn');
+  const statsBox = document.getElementById('feedback-stats');
+  const totalFeedback = document.getElementById('total-feedback');
+  const totalChars = document.getElementById('total-chars');
+  const lastEntry = document.getElementById('last-entry');
+  const filterInput = document.getElementById('filter-input');
+
+  let allFeedbacks = [];
+
+  statsBtn.onclick = () => {
+    const feedbacks = JSON.parse(localStorage.getItem('feedbacks')) || [];
+    totalFeedback.textContent = feedbacks.length;
+    totalChars.textContent = feedbacks.reduce((sum, f) => sum + f.text.length, 0);
+    lastEntry.textContent = feedbacks.length > 0 ? feedbacks[0].timestamp : 'N/A';
+    statsBox.style.display = statsBox.style.display === 'none' ? 'block' : 'none';
+  };
+
+  function loadFeedbacks() {
+    const feedbacks = JSON.parse(localStorage.getItem('feedbacks')) || [];
+    allFeedbacks = feedbacks;
+    displayFeedbacks(feedbacks);
+  }
+
+  function displayFeedbacks(feedbacks) {
+    const container = document.getElementById('feedback-container');
+    container.innerHTML = '';
+    feedbacks.forEach(fb => {
+      const item = document.createElement('div');
+      item.className = 'feedback-item';
+      item.innerHTML = `<span class="timestamp">${fb.timestamp}</span><div>${fb.text}</div>`;
+      container.appendChild(item);
+    });
+  }
+
+  filterInput.addEventListener('input', () => {
+    const keyword = filterInput.value.toLowerCase();
+    const filtered = allFeedbacks.filter(f => f.text.toLowerCase().includes(keyword));
+    displayFeedbacks(filtered);
+  });
+
+  window.onload = loadFeedbacks;
+
+  
+</script>
+
+<body>
+  <div class="theme-options">
+    <div class="theme-button theme-blue" onclick="setTheme('#007bff')"></div>
+    <div class="theme-button theme-purple" onclick="setTheme('#6f42c1')"></div>
+    <div class="theme-button theme-teal" onclick="setTheme('#20c997')"></div>
+  </div>
+  <button id="toggle-dark">🌙 Dark Mode</button>
+  <button id="export-btn">📥 Export</button>
+  <button id="widget-btn">Feedback</button>
+
+  <div id="feedback-form">
+    <div class="char-count" id="char-count">0/200</div>
+    <textarea id="feedback-text" placeholder="Enter your feedback... 😊" maxlength="200"></textarea>
+    <button id="submit-btn">Submit</button>
+  </div>
+
+  <div id="toast">✅ Feedback submitted!</div>
+
+  <div id="feedback-list">
+    <h2>Feedback Received:</h2>
+    <div id="feedback-container"></div>
+  </div>
+
+  <script>
+    const widgetBtn = document.getElementById('widget-btn');
+    const feedbackForm = document.getElementById('feedback-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const feedbackText = document.getElementById('feedback-text');
+    const feedbackContainer = document.getElementById('feedback-container');
+    const charCount = document.getElementById('char-count');
+    const toast = document.getElementById('toast');
+    const toggleDark = document.getElementById('toggle-dark');
+    const exportBtn = document.getElementById('export-btn');
+
+    // System preference sync
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.body.classList.add('dark-mode');
+    }
+
+    // Load user preference
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.body.classList.add('dark-mode');
+    }
+
+    toggleDark.onclick = () => {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+    };
+
+    const savedTheme = localStorage.getItem('themeColor');
+    if (savedTheme) {
+      document.documentElement.style.setProperty('--primary-color', savedTheme);
+    }
+
+    function setTheme(color) {
+      document.documentElement.style.setProperty('--primary-color', color);
+      localStorage.setItem('themeColor', color);
+    }
+
+    widgetBtn.onclick = () => {
+      feedbackForm.classList.toggle('show');
+    };
+
+    feedbackText.addEventListener('input', () => {
+      charCount.textContent = `${feedbackText.value.length}/200`;
+    });
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.className = 'show';
+      setTimeout(() => {
+        toast.className = toast.className.replace('show', '');
+      }, 2000);
+    }
+
+    function saveFeedback(text, timestamp) {
+      let feedbacks = JSON.parse(localStorage.getItem('feedbacks')) || [];
+      feedbacks.unshift({ text, timestamp });
+      localStorage.setItem('feedbacks', JSON.stringify(feedbacks));
+    }
+
+    function loadFeedbacks() {
+      const feedbacks = JSON.parse(localStorage.getItem('feedbacks')) || [];
+      feedbacks.forEach(fb => addFeedbackToUI(fb.text, fb.timestamp));
+    }
+
+    function addFeedbackToUI(text, timestamp) {
+      const feedbackItem = document.createElement('div');
+      feedbackItem.className = 'feedback-item';
+
+      const time = document.createElement('span');
+      time.className = 'timestamp';
+      time.textContent = timestamp;
+
+      const message = document.createElement('div');
+      message.textContent = text;
+
+      feedbackItem.appendChild(time);
+      feedbackItem.appendChild(message);
+      feedbackContainer.appendChild(feedbackItem);
+    }
+
+    submitBtn.onclick = () => {
+      const text = feedbackText.value.trim();
+      if (text !== '') {
+        const timestamp = new Date().toLocaleString();
+        addFeedbackToUI(text, timestamp);
+        saveFeedback(text, timestamp);
+        feedbackText.value = '';
+        charCount.textContent = '0/200';
+        feedbackForm.classList.remove('show');
+        showToast('✅ Feedback submitted!');
+      }
+    };
+
+    exportBtn.onclick = () => {
+      const feedbacks = JSON.parse(localStorage.getItem('feedbacks')) || [];
+      let csv = 'Feedback,Timestamp\n';
+      feedbacks.forEach(f => {
+        csv += `"${f.text.replace(/"/g, '""')}","${f.timestamp}"
+`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'feedback.csv';
+      link.click();
+    };
+
+    window.onload = loadFeedbacks;
+
+    const statsBtn = document.getElementById('stats-btn');
+const statsBox = document.getElementById('feedback-stats');
+const totalFeedback = document.getElementById('total-feedback');
+const totalChars = document.getElementById('total-chars');
+const lastEntry = document.getElementById('last-entry');
+const filterInput = document.getElementById('filter-input');
+
+let allFeedbacks = [];
+
+statsBtn.onclick = () => {
+  const feedbacks = JSON.parse(localStorage.getItem('feedbacks')) || [];
+  totalFeedback.textContent = feedbacks.length;
+  totalChars.textContent = feedbacks.reduce((sum, f) => sum + f.text.length, 0);
+  lastEntry.textContent = feedbacks.length > 0 ? feedbacks[0].timestamp : 'N/A';
+  statsBox.style.display = statsBox.style.display === 'none' ? 'block' : 'none';
+};
+
+function loadFeedbacks() {
+  const feedbacks = JSON.parse(localStorage.getItem('feedbacks')) || [];
+  allFeedbacks = feedbacks;
+  displayFeedbacks(feedbacks);
+}
+
+function displayFeedbacks(feedbacks) {
+  const container = document.getElementById('feedback-container');
+  container.innerHTML = '';
+  feedbacks.forEach(fb => {
+    const item = document.createElement('div');
+    item.className = 'feedback-item';
+    item.innerHTML = `<span class="timestamp">${fb.timestamp}</span><div>${fb.text}</div>`;
+    container.appendChild(item);
+  });
+}
+
+filterInput.addEventListener('input', () => {
+  const keyword = filterInput.value.toLowerCase();
+  const filtered = allFeedbacks.filter(f => f.text.toLowerCase().includes(keyword));
+  displayFeedbacks(filtered);
+});
+
+window.onload = loadFeedbacks;
+
+  </script>
+</body>
+</html>
